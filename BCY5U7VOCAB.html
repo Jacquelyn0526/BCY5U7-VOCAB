@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牵牛花语：语文互动游戏</title>
+    <style>
+        :root {
+            --m-purple: #8e44ad;
+            --m-light-purple: #f4ecf7;
+            --m-green: #27ae60;
+            --m-pink: #fd79a8;
+            --m-white: #ffffff;
+            --m-text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #a29bfe 0%, #81ecec 100%);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--m-text);
+            overflow-x: hidden;
+        }
+
+        /* 顶部导航 */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            width: 100%;
+            padding: 10px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #timer { color: #e17055; min-width: 100px; }
+        #total-score { color: var(--m-green); }
+
+        /* 游戏主体区域 */
+        .container {
+            max-width: 1000px;
+            width: 90%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
+            margin: 30px auto;
+            padding: 40px;
+            border-radius: 30px;
+            border: 8px solid var(--m-light-purple);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .round-title {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--m-purple);
+            margin-bottom: 10px;
+        }
+
+        .sub-round-info {
+            text-align: center;
+            font-weight: bold;
+            color: var(--m-pink);
+            margin-bottom: 20px;
+        }
+
+        /* 布局组件 */
+        .drop-area {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 40px;
+            min-height: 150px;
+        }
+
+        .drag-pool {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            border: 2px dashed var(--m-purple);
+        }
+
+        /* 元素样式 */
+        .drop-box {
+            width: 160px;
+            height: 100px;
+            border: 3px solid var(--m-purple);
+            background: var(--m-white);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .pinyin-label {
+            font-size: 1.8rem; /* 放大拼音 */
+            font-weight: bold;
+            color: var(--m-purple);
+            margin-bottom: 5px;
+        }
+
+        .char-box-large {
+            font-size: 3.5rem; /* 第二回合放大字卡 */
+            font-weight: bold;
+            color: var(--m-text);
+            display: flex;
+            align-items: center;
+        }
+
+        .placeholder {
+            width: 80px;
+            height: 80px;
+            border-bottom: 5px solid var(--m-pink);
+            margin: 0 10px;
+            display: inline-block;
+        }
+
+        .drag-card {
+            padding: 12px 25px;
+            background: var(--m-purple);
+            color: white;
+            border-radius: 50px;
+            cursor: grab;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .drag-card:active { cursor: grabbing; transform: scale(0.9); }
+        .drag-card.correct { background: var(--m-green); cursor: default; }
+
+        /* 句子回合 */
+        .sentence-card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .sentence-row {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-voice {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            margin-right: 15px;
+            transition: transform 0.2s;
+        }
+
+        .btn-voice:hover { transform: scale(1.2); }
+
+        .options-box {
+            display: flex;
+            gap: 15px;
+        }
+
+        .option-btn {
+            padding: 10px 25px;
+            border: 2px solid var(--m-purple);
+            background: white;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover { background: var(--m-light-purple); }
+
+        /* 结尾报表 */
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .result-table th, .result-table td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .rank-badge {
+            font-size: 2.5rem;
+            margin: 20px 0;
+            display: block;
+            color: var(--m-pink);
+            font-weight: bold;
+        }
+
+        .hidden { display: none; }
+        .btn-next {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 50px;
+            background: var(--m-green);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🌿 牵牛花：语文闯关之旅 🌸</h1>
+    <div class="stats-container">
+        <div id="timer">时间：10:00</div>
+        <div id="total-score">总分：0</div>
+        <div>当前回合：<span id="round-idx">1</span></div>
+    </div>
+</header>
+
+<div class="container" id="game-app">
+    <!-- 内容动态生成 -->
+</div>
+
+<script>
+    // 词汇配置
+    const vocabData = [
+        { w: '躺卧', p: 'tǎng wò', s: '老爷爷正舒服地在藤椅上______。' },
+        { w: '攀缘茎', p: 'pān yuán jīng', s: '牵牛花的______细细长长的。' },
+        { w: '搏斗', p: 'bó dòu', s: '海燕在暴风雨中勇敢地与海浪______。' },
+        { w: '灿烂', p: 'càn làn', s: '清晨，阳光透过窗户照进来，十分______。' },
+        { w: '红霞', p: 'hóng xiá', s: '傍晚，天边出现了美丽的______。' },
+        { w: '栋', p: 'dòng', s: '街道旁边有一______红色的古老房子。' },
+        { w: '古堡', p: 'gǔ bǎo', s: '这栋老旧的房子看起来像一座神秘的______。' },
+        { w: '坍塌', p: 'tān tā', s: '地震过后，很多旧房子都______了。' },
+        { w: '砖墙', p: 'zhuān qiáng', s: '牵牛花开满了整面红色的______。' },
+        { w: '无可奈何', p: 'wú kě nài hé', s: '看着打碎的杯子，妈妈______地叹了口气。' },
+        { w: '晓得', p: 'xiǎo de', s: '你______这朵紫色的小花叫什么名字吗？' },
+        { w: '切勿', p: 'qiè wù', s: '这里水很深，______在河边玩耍。' },
+        { w: '泄气', p: 'xiè qì', s: '虽然比赛输了，但我们不能______。' },
+        { w: '勃发', p: 'bó fā', s: '雨后的花儿生机______，非常漂亮。' },
+        { w: '脱俗', p: 'tuō sú', s: '牵牛花虽然普通，却开得清新______。' },
+        { w: '蓬勃', p: 'péng bó', s: '校园里的花草都在______生长。' }
+    ];
+
+    let gameState = {
+        score: [0, 0, 0], // 每回合得分
+        currentRound: 1,
+        currentSub: 1,
+        timeLeft: 600,
+        timerActive: false,
+        round1Words: [],
+        round2Words: [],
+        round3Words: []
+    };
+
+    const app = document.getElementById('game-app');
+
+    // 初始化游戏
+    function init() {
+        startTimer();
+        gameState.round1Words = shuffle([...vocabData]).slice(0, 10);
+        gameState.round2Words = shuffle([...vocabData]).slice(0, 12);
+        gameState.round3Words = shuffle([...vocabData]).slice(0, 6);
+        renderRound1();
+    }
+
+    // --- 第一回合逻辑 ---
+    function renderRound1() {
+        const wordsPerSub = 5;
+        const start = (gameState.currentSub - 1) * wordsPerSub;
+        const end = start + wordsPerSub;
+        const currentTargets = gameState.round1Words.slice(start, end);
+        
+        app.innerHTML = `
+            <div class="round-title">第一回合：拼音配对</div>
+            <div class="sub-round-info">第 ${gameState.currentSub} / 2 轮</div>
+            <div class="drop-area" id="drop-area"></div>
+            <div class="drag-pool" id="drag-pool"></div>
+        `;
+
+        const dropArea = document.getElementById('drop-area');
+        const dragPool = document.getElementById('drag-pool');
+
+        // 渲染5个拼音位
+        currentTargets.forEach(item => {
+            const box = document.createElement('div');
+            box.className = 'drop-box';
+            box.dataset.match = item.w;
+            box.innerHTML = `<span class="pinyin-label">${item.p}</span>`;
+            box.ondragover = e => e.preventDefault();
+            box.ondrop = handleDrop;
+            dropArea.appendChild(box);
+        });
+
+        // 渲染全部10个词卡
+        shuffle([...gameState.round1Words]).forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'drag-card';
+            card.draggable = true;
+            card.innerText = item.w;
+            card.id = 'card-' + item.w;
+            card.ondragstart = e => e.dataTransfer.setData('text', e.target.id);
+            dragPool.appendChild(card);
+        });
+    }
+
+    // --- 第二回合逻辑 ---
+    function renderRound2() {
+        const wordsPerSub = 3;
+        const start = (gameState.currentSub - 1) * wordsPerSub;
+        const end = start + wordsPerSub;
+        const currentTargets = gameState.round2Words.slice(start, end);
+
+        app.innerHTML = `
+            <div class="round-title">第二回合：字词组合</div>
+            <div class="sub-round-info">第 ${gameState.currentSub} / 4 轮</div>
+            <div class="drop-area" id="drop-area"></div>
+            <div class="drag-pool" id="drag-pool"></div>
+        `;
+
+        const dropArea = document.getElementById('drop-area');
+        const dragPool = document.getElementById('drag-pool');
+
+        currentTargets.forEach(item => {
+            // 随机决定挖掉哪个字 (如果是4个字的词，按前两字/后两字分)
+            const isFirst = Math.random() > 0.5;
+            let part1, part2, match;
+            
+            if(item.w.length === 2) {
+                part1 = isFirst ? '' : item.w[0];
+                part2 = isFirst ? item.w[1] : '';
+                match = isFirst ? item.w[0] : item.w[1];
+            } else if(item.w.length === 3) {
+                // 处理攀缘茎
+                part1 = item.w.substring(0, 2);
+                part2 = '';
+                match = item.w[2];
+            } else {
+                // 四字词
+                part1 = isFirst ? '' : item.w.substring(0, 2);
+                part2 = isFirst ? item.w.substring(2, 4) : '';
+                match = isFirst ? item.w.substring(0, 2) : item.w.substring(2, 4);
+            }
+
+            const box = document.createElement('div');
+            box.className = 'drop-box';
+            box.style.width = '300px';
+            box.style.height = '120px';
+            box.dataset.match = match;
+            box.innerHTML = `
+                <div class="char-box-large">
+                    ${part1 || '<span class="placeholder"></span>'}${part2 || '<span class="placeholder"></span>'}
+                </div>
+            `;
+            box.ondragover = e => e.preventDefault();
+            box.ondrop = handleDrop;
+            dropArea.appendChild(box);
+        });
+
+        // 渲染当前轮次的所有备选卡
+        const options = shuffle(currentTargets.map(i => {
+            // 重新计算需要匹配的字
+            const boxes = document.querySelectorAll('.drop-box');
+            return Array.from(boxes).map(b => b.dataset.match);
+        }).flat()).filter((v, i, a) => a.indexOf(v) === i);
+
+        options.forEach(txt => {
+            const card = document.createElement('div');
+            card.className = 'drag-card';
+            card.style.fontSize = '2rem';
+            card.draggable = true;
+            card.innerText = txt;
+            card.id = 'card-' + txt;
+            card.ondragstart = e => e.dataTransfer.setData('text', e.target.id);
+            dragPool.appendChild(card);
+        });
+    }
+
+    // --- 第三回合逻辑 ---
+    function renderRound3() {
+        app.innerHTML = `
+            <div class="round-title">第三回合：句子填空</div>
+            <p style="text-align:center">点击小喇叭听句子，选出正确的词语。</p>
+            <div id="sentence-container"></div>
+        `;
+
+        const container = document.getElementById('sentence-container');
+        gameState.round3Words.forEach((item, idx) => {
+            const card = document.createElement('div');
+            card.className = 'sentence-card';
+            
+            // 干扰项
+            let others = vocabData.filter(v => v.w !== item.w);
+            let distractors = shuffle(others).slice(0, 2).map(v => v.w);
+            let options = shuffle([item.w, ...distractors]);
+
+            card.innerHTML = `
+                <div class="sentence-row">
+                    <button class="btn-voice" onclick="speak('${item.s.replace('______', item.w)}')">🔊</button>
+                    ${idx + 1}. ${item.s.replace('______', '（ ______ ）')}
+                </div>
+                <div class="options-box" id="opt-group-${idx}">
+                    ${options.map(o => `<button class="option-btn" onclick="checkSentence(this, '${o}', '${item.w}', ${idx})">${o}</button>`).join('')}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // --- 通用逻辑 ---
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const cardId = e.dataTransfer.getData('text');
+        const card = document.getElementById(cardId);
+        const match = e.currentTarget.dataset.match;
+
+        if (card.innerText === match) {
+            e.currentTarget.appendChild(card);
+            card.draggable = false;
+            card.classList.add('correct');
+            updateScore(10);
+            checkRoundProgress();
+        } else {
+            updateScore(-5);
+            alert('再想想，这两个字/词好像不配哦！');
+        }
+    }
+
+    function checkSentence(btn, selected, correct, groupIdx) {
+        if (selected === correct) {
+            btn.style.background = varColor('--m-green');
+            btn.style.color = 'white';
+            const group = document.getElementById(`opt-group-${groupIdx}`);
+            Array.from(group.children).forEach(b => b.onclick = null);
+            updateScore(20);
+            checkRoundProgress();
+        } else {
+            btn.style.background = '#e17055';
+            btn.style.color = 'white';
+            updateScore(-5);
+        }
+    }
+
+    function updateScore(points) {
+        gameState.score[gameState.currentRound - 1] += points;
+        const total = gameState.score.reduce((a, b) => a + b, 0);
+        document.getElementById('total-score').innerText = `总分：${total}`;
+    }
+
+    function checkRoundProgress() {
+        if (gameState.currentRound === 1) {
+            const placed = document.querySelectorAll('.drop-box .drag-card').length;
+            if (placed === 5) {
+                if (gameState.currentSub < 2) {
+                    gameState.currentSub++;
+                    setTimeout(renderRound1, 1000);
+                } else {
+                    nextRound();
+                }
+            }
+        } else if (gameState.currentRound === 2) {
+            const placed = document.querySelectorAll('.drop-box .drag-card').length;
+            if (placed === 3) {
+                if (gameState.currentSub < 4) {
+                    gameState.currentSub++;
+                    setTimeout(renderRound2, 1000);
+                } else {
+                    nextRound();
+                }
+            }
+        } else {
+            // 第三回合
+            const answered = document.querySelectorAll('.option-btn[style*="background: rgb(39, 174, 96)"]').length;
+            if (answered === 6) showFinalResult();
+        }
+    }
+
+    function nextRound() {
+        alert(`恭喜通过第 ${gameState.currentRound} 回合！`);
+        gameState.currentRound++;
+        gameState.currentSub = 1;
+        document.getElementById('round-idx').innerText = gameState.currentRound;
+        if (gameState.currentRound === 2) renderRound2();
+        else if (gameState.currentRound === 3) renderRound3();
+    }
+
+    function startTimer() {
+        gameState.timerActive = true;
+        const timerObj = setInterval(() => {
+            if (gameState.timeLeft <= 0) {
+                clearInterval(timerObj);
+                showFinalResult();
+            }
+            gameState.timeLeft--;
+            const m = Math.floor(gameState.timeLeft / 60);
+            const s = gameState.timeLeft % 60;
+            document.getElementById('timer').innerText = `时间：${m}:${s < 10 ? '0' + s : s}`;
+        }, 1000);
+    }
+
+    function speak(text) {
+        const msg = new SpeechSynthesisUtterance();
+        msg.text = text;
+        msg.lang = 'zh-CN';
+        window.speechSynthesis.speak(msg);
+    }
+
+    function showFinalResult() {
+        const total = gameState.score.reduce((a, b) => a + b, 0);
+        let rank = "";
+        let icon = "";
+
+        // 六个等级
+        if (total >= 400) { rank = "倾世绽放 (S)"; icon = "👑"; }
+        else if (total >= 320) { rank = "灿烂盛开 (A)"; icon = "🌸"; }
+        else if (total >= 240) { rank = "蓬勃生长 (B)"; icon = "🌿"; }
+        else if (total >= 160) { rank = "破土而出 (C)"; icon = "🌱"; }
+        else if (total >= 80) { rank = "含苞待放 (D)"; icon = "🍬"; }
+        else { rank = "勤加施肥 (E)"; icon = "💧"; }
+
+        app.innerHTML = `
+            <div class="round-title">游戏完成！成绩单</div>
+            <div style="text-align:center">
+                <span class="rank-badge">${icon} ${rank}</span>
+                <table class="result-table">
+                    <tr><th>回合</th><th>得分</th></tr>
+                    <tr><td>第一回合 (拼音)</td><td>${gameState.score[0]}</td></tr>
+                    <tr><td>第二回合 (组词)</td><td>${gameState.score[1]}</td></tr>
+                    <tr><td>第三回合 (填空)</td><td>${gameState.score[2]}</td></tr>
+                    <tr style="font-weight:bold; color:var(--m-purple)"><td>总成绩</td><td>${total}</td></tr>
+                </table>
+                <button class="btn-next" onclick="location.reload()">重新挑战</button>
+            </div>
+        `;
+    }
+
+    function shuffle(array) {
+        return array.sort(() => Math.random() - 0.5);
+    }
+
+    function varColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
